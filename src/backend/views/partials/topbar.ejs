@@ -112,7 +112,7 @@
                 </h6>
                 <a class="dropdown-item d-flex align-items-center" href="#">
                     <div class="dropdown-list-image mr-3">
-                        <img class="rounded-circle" src="img/undraw_profile_1.svg" alt="...">
+                        <img class="rounded-circle" src="/public/images/undraw_profile_1.svg" alt="...">
                         <div class="status-indicator bg-success"></div>
                     </div>
                     <div class="font-weight-bold">
@@ -123,7 +123,7 @@
                 </a>
                 <a class="dropdown-item d-flex align-items-center" href="#">
                     <div class="dropdown-list-image mr-3">
-                        <img class="rounded-circle" src="img/undraw_profile_2.svg" alt="...">
+                        <img class="rounded-circle" src="/public/images/undraw_profile_2.svg" alt="...">
                         <div class="status-indicator"></div>
                     </div>
                     <div>
@@ -134,7 +134,7 @@
                 </a>
                 <a class="dropdown-item d-flex align-items-center" href="#">
                     <div class="dropdown-list-image mr-3">
-                        <img class="rounded-circle" src="img/undraw_profile_3.svg" alt="...">
+                        <img class="rounded-circle" src="/public/images/undraw_profile_3.svg" alt="...">
                         <div class="status-indicator bg-warning"></div>
                     </div>
                     <div>
@@ -164,8 +164,8 @@
         <li class="nav-item dropdown no-arrow">
             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
                 aria-haspopup="true" aria-expanded="false">
-                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Ayoub El-Boujadi</span>
-                <img class="img-profile rounded-circle" src="img/undraw_profile.svg">
+                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><%= user.firstName %></span>
+                <img class="img-profile rounded-circle" src="/public/images/undraw_profile.svg">
             </a>
             <!-- Dropdown - User Information -->
             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
@@ -182,7 +182,7 @@
                     Activity Log
                 </a>
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                <a class="dropdown-item" href="/logout" data-toggle="modal" data-target="#logoutModal">
                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                     Logout
                 </a>
@@ -193,3 +193,16 @@
 
 </nav>
 <!-- End of Topbar -->
+
+<% if (locals.flashMessage) { %>
+<% for( let index = 0; index < flashMessage.length; index++ ) { %>
+<% var message = flashMessage[index]; %>
+<div class="alert alert-<%= message.type %> alert-dismissible fade show" role="alert"
+    style="margin-left: 20px; margin-right: 20px;">
+    <%= message.message %>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+<% } %>
+<% } %>

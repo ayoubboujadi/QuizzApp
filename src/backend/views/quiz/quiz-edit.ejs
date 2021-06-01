@@ -34,6 +34,16 @@
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800"><%= quiz.name %></h1>
+                        <button @click="saveQuiz()" :disabled="isSaving" role="button"
+                            class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+
+                            <span v-if="isSaving" class="spinner-border spinner-border-sm" role="status"
+                                aria-hidden="true"></span>
+                            <span v-if="isSaving" class="sr-only">Loading...</span>
+
+                            <i v-if="!isSaving" class="fas fa-save fa-sm text-white-50"></i>
+                            Save quiz
+                        </button>
                     </div>
 
                     <!-- Content Row -->
@@ -49,7 +59,7 @@
                                             <label for="inputName" class="col-sm-2 col-form-label">Quiz Name</label>
                                             <div class="col-sm-10">
                                                 <input type="text" class="form-control" name="name" id="inputName"
-                                                    placeholder="Name" value="<%= quiz.name %>">
+                                                    placeholder="Name" v-model="quizData.name">
                                             </div>
                                         </div>
                                         <div class="form-group row">
@@ -57,7 +67,7 @@
                                                 Description</label>
                                             <div class="col-sm-10">
                                                 <textarea class="form-control" name="description" id="inputDescription"
-                                                    placeholder="Description"></textarea>
+                                                    placeholder="Description" v-model="quizData.description"></textarea>
                                             </div>
                                         </div>
                                         <div class="form-group row">
@@ -73,8 +83,8 @@
 
                     <div class="row" v-for="(question, index) in questions">
                         <div class="col-xl-12 col-md-12">
-                            <question-wrapper :key="question.id" :question="question" :question-number="index + 1" 
-                                :questions-count="questions.length" :questions-types="questionsTypes" 
+                            <question-wrapper :key="question.id" :question="question" :question-number="index + 1"
+                                :questions-count="questions.length" :questions-types="questionsTypes"
                                 @remove-question="removeQuestion">
                             </question-wrapper>
                         </div>
@@ -86,8 +96,8 @@
                                 <div class="card-body">
                                     <select v-model="selectedQuestionType" class="custom-select mr-3"
                                         style="max-width: 300px;">
-                                        <option value="single-choice" selected>Singe-choice answer question</option>
-                                        <option value="multi-choice">Multi-choice answer(s) question</option>
+                                        <answer value="single-choice" selected>Singe-choice answer question</answer>
+                                        <answer value="multi-choice">Multi-choice answer(s) question</answer>
                                     </select>
                                     <button class="btn btn-info" id="btnAddQuestion" v-on:click="addQuestion()">Add
                                         question</button>
@@ -119,12 +129,21 @@
             </div>
 
             <div v-if="!question.isEditing" class="form-group answers">
-                <div class="form-check" style="margin: 6px 30px;" v-for="option in question.options">
-                    <input class="form-check-input" type="radio" disabled name="option" :id="'question_' + question.id + '_option_' + option.valueId"
-                            :value="option.valueId" v-model="question.correctAnswer">
-                    <label class="form-check-label" :for="'question_' + question.id + '_option_' + option.valueId">
-                        {{ option.value }}
+                <div class="form-check" style="margin: 6px 30px;" v-for="answer in question.answers">
+                    <input class="form-check-input" type="radio" disabled name="answer" :id="'question_' + question.id + '_answer_' + answer.valueId"
+                            :value="answer.valueId" v-model="question.correctAnswer">
+                    <label class="form-check-label" :for="'question_' + question.id + '_answer_' + answer.valueId">
+                        {{ answer.value }}
                     </label>
+                    <span v-if="question.correctAnswer == answer.valueId" class="badge badge-success">Correct answer</span>
+
+                    <span v-if="question.useQuestionPoints && question.correctAnswer == answer.valueId && question.points > 0" 
+                        class="badge badge-pill badge-info"> + {{question.points}} points</span>
+
+                    <span v-if="!question.useQuestionPoints && question.correctAnswer == answer.valueId && answer.points > 0" 
+                        class="badge badge-pill badge-info"> + {{answer.points}} points</span>
+                    <span v-if="!question.useQuestionPoints && question.correctAnswer != answer.valueId && answer.points > 0" 
+                        class="badge badge-pill badge-danger"> - {{answer.points}} points</span>
                 </div>
             </div>
 
@@ -138,25 +157,25 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="option in question.options">
+                    <tr v-for="answer in question.answers">
                         <td>
-                            <input type="text" name="test" v-model="option.value" class="form-control form-control-sm" style="max-width: 450px;">
+                            <input type="text" name="test" v-model="answer.value" class="form-control form-control-sm" style="max-width: 450px;">
                         </td>
                         <td>
-                            <input type="radio" name="option" :id="'question_' + question.id + '_option_' + option.valueId"
-                                :value="option.valueId" v-model="question.correctAnswer">
+                            <input type="radio" name="answer" :id="'question_' + question.id + '_answer_' + answer.valueId"
+                                :value="answer.valueId" v-model="question.correctAnswer" @change="correctAnswerChange(answer)">
                         </td>
                         <td>
-                            <input :disabled="question.useQuestionPoints" type="number" v-model="option.points" class="form-control form-control-sm" style="max-width: 300px;">
+                            <input :disabled="question.useQuestionPoints" type="number" v-model="answer.points" class="form-control form-control-sm" style="max-width: 300px;">
                         </td>
                         <td>
-                            <a @click="deleteOption(option)" role="button" style="color: #e74a3b;text-decoration: none;">Delete</a>
+                            <a @click="deleteAnswer(answer)" role="button" style="color: #e74a3b;text-decoration: none;">Delete</a>
                         </td>
                     </tr>
                 </tbody>
             </div>
 
-            <button v-if="question.isEditing" class="btn btn-info btn-sm" v-on:click="addOption(question)">Add option</button>
+            <button v-if="question.isEditing" class="btn btn-info btn-sm" v-on:click="addAnswer(question)">Add answer</button>
         </div>
     </script>
 
@@ -169,22 +188,22 @@
                 </textarea>
             </div>
 
-            <div class="form-group options">
-                <label v-if="question.isEditing" for="exampleInputEmail1">Question options:</label>
-                <div class="form-check d-flex" style="margin: 6px 30px;" v-for="option in question.options">
-                    <input class="form-check-input" type="checkbox" name="option" :id="'question_' + question.id + '_option_' + option.valueId"
-                         :value="option.valueId" checked>
+            <div class="form-group answers">
+                <label v-if="question.isEditing" for="exampleInputEmail1">Question answers:</label>
+                <div class="form-check d-flex" style="margin: 6px 30px;" v-for="answer in question.answers">
+                    <input class="form-check-input" type="checkbox" name="answer" :id="'question_' + question.id + '_answer_' + answer.valueId"
+                         :value="answer.valueId" checked>
                     
-                    <label v-if="!question.isEditing" class="form-check-label" :for="'question_' + question.id + '_option_' + option.valueId">
-                        {{ option.value }}
+                    <label v-if="!question.isEditing" class="form-check-label" :for="'question_' + question.id + '_answer_' + answer.valueId">
+                        {{ answer.value }}
                     </label>
 
-                    <input v-if="question.isEditing" type="text" name="test" v-model="option.value" 
+                    <input v-if="question.isEditing" type="text" name="test" v-model="answer.value" 
                         class="form-control form-control-sm" style="max-width: 450px;">
                 </div>
             </div>
 
-            <button v-if="question.isEditing" class="btn btn-info btn-sm" v-on:click="addOption(question)">Add option</button>
+            <button v-if="question.isEditing" class="btn btn-info btn-sm" v-on:click="addAnswer(question)">Add answer</button>
         </div>
     </script>
 
@@ -207,7 +226,7 @@
                         <button v-if="question.isEditing" aria-label="Save" class="btn btn-success btn-sm ml-4" v-on:click="toggleEdit(question)">
                             <i class="fas fa-check"></i>
                         </button>
-                        <button aria-label="Delete question" class="btn btn-outline-danger btn-sm ml-2" v-on:click="remove(question)">
+                        <button aria-label="Delete question" class="btn btn-danger btn-sm ml-2" v-on:click="remove(question)">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -222,21 +241,40 @@
     </script>
 
     <script>
+        var quizData = JSON.parse('<%- JSON.stringify(quiz) %>');
+
+        if (!quizData.questions) {
+            quizData.questions = [];
+        }
+
+        quizData.questions.forEach(question => {
+            question.isEditing = false;
+            question.isNew = false;
+        });
+
         var comp = Vue.component('singlechoice-component', {
             props: ['question'],
             template: '#question-singlechoice-template',
             methods: {
-                addOption: function (question) {
-                    question.options.push(
+            addAnswer: function (question) {
+                    question.answers.push(
                         {
-                            'order': question.options.length + 1,
-                            'valueId': question.options.length + 1,
-                            'value': 'Option ' + (question.options.length + 1)
+                            'order': question.answers.length + 1,
+                            'valueId': question.answers.length + 1,
+                            'value': 'Answer ' + (question.answers.length + 1),
+                            'isCorrect': false
                         }
                     );
                 },
-                deleteOption(option) {
-                    this.question.options.splice(this.question.options.indexOf(option), 1);
+                deleteAnswer(answer) {
+                    this.question.answers.splice(this.question.answers.indexOf(answer), 1);
+                },
+                correctAnswerChange(answer) {
+                    this.question.answers.forEach(answer => {
+                        answer.isCorrect = false;
+                    });
+
+                    answer.isCorrect = true;
                 }
             }
         });
@@ -245,12 +283,12 @@
             props: ['question'],
             template: '#question-multichoice-template',
             methods: {
-                addOption: function (question) {
-                    question.options.push(
+                addAnswer: function (question) {
+                    question.answers.push(
                         {
-                            'order': question.options.length + 1,
-                            'valueId': question.options.length + 1,
-                            'value': 'Option ' + (question.options.length + 1)
+                            'order': question.answers.length + 1,
+                            'valueId': question.answers.length + 1,
+                            'value': 'Answer ' + (question.answers.length + 1)
                         }
                     );
                 }
@@ -262,7 +300,7 @@
             template: '#question-wrapper-template',
             methods: {
                 toggleEdit: function (question) {
-                    questions.forEach(x => x.id != question.id ? x.isEditing = false : x.isEditing = x.isEditing);
+                    quizData.questions.forEach(x => x.id != question.id ? x.isEditing = false : x.isEditing = x.isEditing);
                     question.isEditing = !question.isEditing;
                 },
                 remove: function (question) {
@@ -272,66 +310,59 @@
             emits: ['remove-question']
         });
 
-        var questions = [
-            {
-                'id': 1,
-                'isEditing': false,
-                'type': 'single-choice',
-                'text': 'value 1',
-                'correctAnswer': '2',
-                'points': null,
-                'useQuestionPoints': false,
-                'options': [
-                    {
-                        'order': 1,
-                        'valueId': '1',
-                        'value': 'Option 1'
-                    },
-                    {
-                        'order': 2,
-                        'valueId': '2',
-                        'value': 'Option 1'
-                    },
-                    {
-                        'order': 3,
-                        'valueId': '3',
-                        'value': 'Option 1'
-                    },
-                ]
-            }
-        ];
-
         var app = new Vue({
             el: '#app',
             data: {
-                name: 'Jonathan',
-                selectedQuestionType: 'multi-choice',
-                questions: questions,
+                quizData,
+                questions: quizData.questions,
+                selectedQuestionType: 'single-choice',
                 questionsTypes: {
                     "single-choice": 'Single Choice Question',
                     "multi-choice": 'Multi Choice Question'
                 },
+                isSaving: false
             },
             methods: {
                 addQuestion: function () {
-                    questions.push({
-                        'id': (questions.length + 1),
+                    this.questions.push({
+                        'id': generateGuid(),
                         'isNew': true,
                         'isEditing': false,
                         'type': this.selectedQuestionType,
-                        'text': 'Question ' + (questions.length + 1),
+                        'text': 'Question ' + (this.questions.length + 1),
                         'correctAnswer': '',
-                        'options': []
+                        'answers': []
                     }
                     );
                 },
                 removeQuestion(question) {
                     this.questions.splice(this.questions.indexOf(question), 1);
+                },
+                saveQuiz() {
+                    var requestData = {
+                        quiz: this.quizData
+                    };
+                    console.log('requestData:', requestData);
+                    this.isSaving = true;
+                    console.log("finally 0" + this.isSaving);
+
+                    axios.post('/quiz/update', requestData)
+                        .then(function (response) {
+                            Snackbar.show({
+                                text: 'Quiz saved successfully!',
+                                pos: 'top-right',
+                            });
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        })
+                        .then(() => {
+                            this.isSaving = false;
+                        });
                 }
             }
         })
 
-        window.quizData = JSON.parse('<%- JSON.stringify(quiz) %>');
         window.onload = function () {
             $("#formQuiz").on('submit', function (e) {
                 const quizName = document.getElementById("inputName").value;
@@ -348,6 +379,14 @@
                 return false;
             });
         };
+
+
+        function generateGuid() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
     </script>
 
     <%- include('../partials/pageend'); %>

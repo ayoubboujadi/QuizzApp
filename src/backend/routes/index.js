@@ -4,7 +4,9 @@ const Quiz = require('../models').Quiz;
 
 /* GET home page. */
 router.get('/', async function(req, res, next) {
-  res.render('quiz/index', { title: 'Express ' });
+  if(req.isAuthenticated())
+    res.redirect('/dashboard');
+  res.render('index', { title: 'Express ' });
 });
 
 module.exports = router;

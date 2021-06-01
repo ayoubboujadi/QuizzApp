@@ -14,11 +14,16 @@ module.exports = (sequelize, DataTypes) => {
       Quiz.belongsTo(models.User, {
         foreignKey: 'userId'
       });
+
+      Quiz.hasMany(models.Question, {
+        foreignKey: 'quizId'
+      });
     }
   };
   Quiz.init({
     name: DataTypes.STRING,
-    description: DataTypes.STRING
+    description: DataTypes.STRING,
+    userId: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Quiz',
