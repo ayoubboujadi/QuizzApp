@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('../partials/head'); %>
+</head>
+
+<style>
+    .table th,
+    .table td {
+        border: 1px solid #e3e6f0;
+        background-color: #fdfdfe;
+    }
+</style>
+
+<body id="page-top">
+
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+        <%- include('../partials/sidebar'); %>
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Main Content -->
+            <div id="content">
+
+                <%- include('../partials/topbar'); %>
+
+                <!-- Begin Page Content -->
+                <div class="container-fluid" id="app">
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800"><%- candidate.fullName %>'s Quizzes</h1>
+                    </div>
+
+                    <!-- Content Row -->
+                    <div class="row">
+                        <div class="col-xl-12 col-md-12">
+                            <div class="card mb-3">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Quizzes:</h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Quiz Name</th>
+                                                <th>Token</th>
+                                                <th>Quiz taking link</th>
+                                                <th>Started Date</th>
+                                                <th>Finished Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="submission in candidateSubmissions">
+                                                <td>{{submission.Quiz.name}}</td>
+                                                <td>{{submission.token}}</td>
+                                                <td>
+                                                    <input
+                                                        :value="'<%- hostname %>/submission/start/' + submission.token"
+                                                        disabled style="width: 300px;"></input>
+                                                    <i role="button" class="fas fa-copy"
+                                                        :click="copyTakeQuizUrl(submission)"></i>
+                                                </td>
+                                                <td>{{submission.dateStarted | moment}}</td>
+                                                <td>{{submission.dateFinished | moment}}</td>
+                                                <td>
+                                                    <span v-if="submission.isStarted == 0" class="badge badge-info">not
+                                                        started</span>
+                                                    <span v-if="submission.isStarted == 1 && submission.isFinished == 0"
+                                                        class="badge badge-success">in progress</span>
+                                                    <span v-if="submission.isFinished == 1"
+                                                        class="badge badge-info">finished</span>
+                                                </td>
+                                                <td><a :href="'/candidate/result/' + submission.id" class="btn btn-success">Results</a></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.container-fluid -->
+
+            </div>
+            <!-- End of Main Content -->
+
+            <%- include('../partials/footer'); %>
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+
+        <script>
+            var candidate = JSON.parse('<%- JSON.stringify(candidate) %>');
+            var candidateSubmissions = JSON.parse('<%- JSON.stringify(candidateSubmissions) %>');
+
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    candidate,
+                    candidateSubmissions,
+                },
+                filters: {
+                    moment: function (date) {
+                        if(!date || date == null){
+                            return '-';
+                        }
+
+                        return moment(date).format('MMMM Do YYYY, h:mm:ss a');
+                    }
+                },
+                methods: {
+                    copyTakeQuizUrl(submission) {
+
+                    },
+                }
+            })
+
+        </script>
+
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <%- include('../partials/pageend'); %>
+
+</body>
+
+</html>

@@ -13,8 +13,10 @@ var flash = require('connect-flash');
 // Import the routes
 var indexRouter = require('./routes/index');
 var quizRouter = require('./routes/quiz');
+var candidateRouter = require('./routes/candidate');
 var authenticationRouter = require('./routes/authentication');
 var dashboardRouter = require('./routes/dashboard');
+var submissionRouter = require('./routes/submission');
 
 // load passport strategies
 require('./config/passport')(passport);
@@ -30,9 +32,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use('/public', express.static(path.join(__dirname, 'public')));
-
-
-
 
 app.use(bodyParser.json())
 //app.use(expressValidator())
@@ -53,8 +52,10 @@ app.use(function (req, res, next) {
 
 // Register all the routes
 app.use('/quiz', quizRouter);
+app.use('/candidate', candidateRouter);
+app.use('/submission', submissionRouter);
 app.use('/', dashboardRouter);
-app.use('/', authenticationRouter)
+app.use('/', authenticationRouter);
 app.use('/', indexRouter);
 
 // catch 404 and forward to error handler

@@ -2,12 +2,12 @@
 QuizzApp
 
 
-#Nothing to see here
+# Nothing to see here
 
 
 ## To create a new migration file use the following command:
 
-npx sequelize-cli migration:create --name migration-name
+npx sequelize-cli migration:create --name added-candidate-associations
 
 ## To run the pending migration files:
 

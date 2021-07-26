@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('../partials/head'); %>
+</head>
+
+<body id="page-top">
+
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+        <%- include('../partials/sidebar'); %>
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Main Content -->
+            <div id="content">
+
+                <%- include('../partials/topbar'); %>
+
+
+                <!-- Begin Page Content -->
+                <div class="container-fluid">
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Create new Candidate</h1>
+                    </div>
+
+                    <!-- Content Row -->
+                    <div class="row">
+                        <div class="col-xl-12 col-md-12 mb-4">
+                            <div class="card mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Candidate Details:</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form method="POST" action="/candidate/create" id="formCandidate">
+                                        <div class="form-group row">
+                                            <label for="inputName" class="col-sm-2 col-form-label">Full Name *</label>
+                                            <div class="col-sm-10">
+                                                <input type="text" class="form-control" name="fullName" id="inputName"
+                                                    placeholder="Full Name">
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label for="inputEmail" class="col-sm-2 col-form-label">Email Address *</label>
+                                            <div class="col-sm-10">
+                                                <input type="text" class="form-control" name="email" id="inputEmail"
+                                                    placeholder="Email">
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <label for="inputIdentification" class="col-sm-2 col-form-label">Identification</label>
+                                            <div class="col-sm-10">
+                                                <input type="text" class="form-control" name="identification" id="inputIdentification"
+                                                    placeholder="Internal Identification">
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-sm-10">
+                                                <button type="submit" class="btn btn-primary">Create</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.container-fluid -->
+
+            </div>
+            <!-- End of Main Content -->
+
+
+
+            <%- include('../partials/footer'); %>
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <%- include('../partials/pageend'); %>
+
+</body>
+
+</html>

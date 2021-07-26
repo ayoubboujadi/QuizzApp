@@ -18,12 +18,19 @@ module.exports = (sequelize, DataTypes) => {
       Quiz.hasMany(models.Question, {
         foreignKey: 'quizId'
       });
+
+      Quiz.hasMany(models.CandidateSubmission, {
+        foreignKey: 'quizId'
+      });
     }
   };
   Quiz.init({
     name: DataTypes.STRING,
     description: DataTypes.STRING,
-    userId: DataTypes.INTEGER
+    userId: DataTypes.INTEGER,
+    timeLimitMinutes: DataTypes.INTEGER,
+    availableFromDate: DataTypes.DATE,
+    availableToDate: DataTypes.DATE,
   }, {
     sequelize,
     modelName: 'Quiz',

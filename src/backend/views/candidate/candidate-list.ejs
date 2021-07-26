@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('../partials/head'); %>
+</head>
+
+<style>
+    .table th,
+    .table td {
+        border: 1px solid #e3e6f0;
+        background-color: #fdfdfe;
+    }
+
+    .modal-mask {
+        position: fixed;
+        z-index: 9998;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, .5);
+        display: table;
+        transition: opacity .3s ease;
+    }
+
+    .modal-wrapper {
+        display: table-cell;
+        vertical-align: middle;
+    }
+</style>
+
+<body id="page-top">
+
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+        <%- include('../partials/sidebar'); %>
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Main Content -->
+            <div id="content">
+
+                <%- include('../partials/topbar'); %>
+
+                <!-- Begin Page Content -->
+                <div class="container-fluid" id="app">
+
+                    <div v-if="showModal">
+                        <transition name="modal">
+                            <div class="modal-mask">
+                                <div class="modal-wrapper">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Please choose the Quizz(es) to assign to the
+                                                    candidate:</h5>
+                                                <button type="button" class="close" data-dismiss="modal"
+                                                    aria-label="Close">
+                                                    <span aria-hidden="true" @click="showModal = false">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div v-for="quiz in getCandidateAssignableQuizzes()"
+                                                    class="form-check d-flex">
+                                                    <input class="form-check-input" type="checkbox"
+                                                        :name="'quiz_modal_' + quiz.id" :id="'quiz_modal_' + quiz.id"
+                                                        :value="quiz.id" v-model="modalCheckedQuizzes">
+
+                                                    <label class="form-check-label" :for="'quiz_modal_' + quiz.id">
+                                                        {{ quiz.name }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    @click="showModal = false">Close</button>
+                                                <button type="button" class="btn btn-primary"
+                                                    @click="modalSaveChangesClick()">Save changes</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </transition>
+                    </div>
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">My Candidates</h1>
+                    </div>
+
+                    <!-- Content Row -->
+                    <div class="row">
+                        <div class="col-xl-12 col-md-12">
+                            <div class="card mb-3">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Candidates:</h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Fullname</th>
+                                                <th>Email</th>
+                                                <th>Identification</th>
+                                                <th>Added Date</th>
+                                                <th>Assigned Quizzes</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="candidate in candidates">
+                                                <td>{{candidate.fullName}}</td>
+                                                <td>{{candidate.email}}</td>
+                                                <td>{{candidate.identification}}</td>
+                                                <td>{{candidate.createdAt}}</td>
+                                                <td>
+                                                    <div v-for="submission in candidate.CandidateSubmissions">
+                                                        <span style="font-size:80%"
+                                                            class="badge badge-primary">{{submission.quiz.name}}</span>
+                                                        <span role="button" aria-label="remove quiz"
+                                                            v-on:click="removeSubmission(candidate, submission)">
+                                                            <i class="fas fa-trash"></i>
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-info"
+                                                        v-on:click="showModalF(candidate)">Assign to new Quiz</button>
+                                                    <a class="btn btn-sm btn-info" role="button"
+                                                        :href="'/candidate/submissions/' + candidate.id">View
+                                                        submission</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.container-fluid -->
+
+            </div>
+            <!-- End of Main Content -->
+
+            <%- include('../partials/footer'); %>
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+
+        <script>
+            var candidates = JSON.parse('<%- JSON.stringify(candidates) %>');
+            var quizzes = JSON.parse('<%- JSON.stringify(quizzes) %>');
+
+            candidates?.forEach(candidate => {
+                candidate.CandidateSubmissions?.forEach(submission => {
+                    var quiz = quizzes?.find(x => x.id == submission.quizId);
+                    submission.quiz = quiz;
+                })
+            });
+
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    candidates,
+                    quizzes,
+                    showModal: false,
+                    modalCurrentCandidate: null,
+                    modalCheckedQuizzes: []
+                },
+                methods: {
+                    removeSubmission: async function (candidate, submission) {
+                        var response = await axios.delete('/candidate/deleteSubmission/' + submission.id);
+                        var data = response.data;
+                        if (data.success) {
+                            var candidateSubmissions = data.candidateSubmissions;
+
+                            candidateSubmissions.forEach(submission => {
+                                var quiz = this.quizzes?.find(x => x.id == submission.quizId);
+                                submission.quiz = quiz;
+                            });
+
+                            var candidate = this.candidates.find(x => x.id == candidate.id);
+                            candidate.CandidateSubmissions = candidateSubmissions;
+                        }
+                    },
+
+                    showModalF(candidate) {
+                        this.showModal = true;
+                        this.modalCurrentCandidate = candidate;
+                        this.modalCheckedQuizzes = [];
+                    },
+
+                    getCandidateAssignableQuizzes() {
+                        var result = [];
+                        this.quizzes.forEach(quiz => {
+                            if (!this.modalCurrentCandidate.CandidateSubmissions.some(submission => submission.quizId == quiz.id))
+                                result.push(quiz);
+                        })
+                        return result;
+                    },
+
+                    modalSaveChangesClick() {
+                        console.log(this.modalCheckedQuizzes);
+                        if (this.modalCheckedQuizzes.length > 0) {
+                            const candidateId = this.modalCurrentCandidate.id;
+                            const requestData = {
+                                quizzesIds: this.modalCheckedQuizzes,
+                                candidateId
+                            };
+
+                            axios.post('/candidate/assign', requestData)
+                                .then(response => {
+                                    var data = response.data;
+                                    if (data.success) {
+                                        var candidateSubmissions = data.candidateSubmissions;
+
+                                        candidateSubmissions.forEach(submission => {
+                                            var quiz = this.quizzes?.find(x => x.id == submission.quizId);
+                                            submission.quiz = quiz;
+                                        });
+
+                                        var candidate = this.candidates.find(x => x.id == candidateId);
+                                        candidate.CandidateSubmissions = candidateSubmissions;
+                                    }
+                                })
+                                .catch(function (error) {
+                                    console.log(error);
+                                })
+                                .then(() => {
+                                });
+                        }
+                        this.showModal = false;
+                    },
+
+                }
+            })
+
+        </script>
+
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <%- include('../partials/pageend'); %>
+
+</body>
+
+</html>

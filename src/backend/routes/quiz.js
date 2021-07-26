@@ -16,7 +16,7 @@ const asyncMiddleware = fn =>
 router.get('/create', utils.isUserLoggedIn, quizController.createQuizPage);
 
 // Saves new quiz to the database from form-data
-router.post('/create', utils.isUserLoggedIn, quizValidator.validateQuiz, asyncMiddleware(quizController.createQuiz));
+router.post('/create', utils.isUserLoggedIn/*, quizValidator.validateQuiz*/, asyncMiddleware(quizController.createQuiz));
 
 // Retruns the basic HTML page that has the quiz editing form
 router.get('/edit/:id', utils.isUserLoggedIn, asyncMiddleware(quizController.editQuiz));

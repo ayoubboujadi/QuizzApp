@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('../partials/head'); %>
+</head>
+
+<style>
+    .table th,
+    .table td {
+        border: 1px solid #e3e6f0;
+        background-color: #fdfdfe;
+    }
+
+    span.label {
+        color: grey;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    span.value {
+        color: black;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    h5 {
+        font-weight: 600;
+    }
+
+    hr {
+        margin: 12px 50px;
+    }
+</style>
+
+<body id="page-top">
+
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+        <%- include('../partials/sidebar'); %>
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Main Content -->
+            <div id="content">
+
+                <%- include('../partials/topbar'); %>
+
+                <!-- Begin Page Content -->
+                <div class="container-fluid" id="app">
+
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800"><%- candidate.fullName %>'s Quizzes</h1>
+                    </div>
+
+                    <!-- Content Row -->
+                    <div class="row">
+                        <div class="col-xl-12 col-md-12">
+                            <div class="card mb-3">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Result:</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="container-fluid mb-4">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="col-md-10">
+                                                    <h5 class="mb-4">Candidate details</h5>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Full name</span>
+                                                        <span class="value">{{candidate.fullName}}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Identification</span>
+                                                        <span class="value">{{candidate.identification}}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Email</span>
+                                                        <span class="value">{{candidate.email}}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Started date</span>
+                                                        <span class="value">{{candidate.dateStarted | moment}}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Finished date</span>
+                                                        <span class="value">{{candidate.dateFinished | moment}}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Status</span>
+                                                        <span v-if="submission.isStarted == 0"
+                                                            class="value badge badge-info">not
+                                                            started</span>
+                                                        <span
+                                                            v-if="submission.isStarted == 1 && submission.isFinished == 0"
+                                                            class="value badge badge-success">in progress</span>
+                                                        <span v-if="submission.isFinished == 1"
+                                                            class="value badge badge-info">finished</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="col-md-10">
+                                                    <h5 class="mb-4">Quiz details</h5>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Name</span>
+                                                        <span class="value">{{quiz.name}}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Created date</span>
+                                                        <span class="value">{{quiz.createdAt | moment}}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Description</span>
+                                                        <span class="value">{{quiz.description}}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Time limit</span>
+                                                        <span class="value">{{quiz.timeLimitMinutes}}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="label">Number of questions</span>
+                                                        <span class="value">{{quiz.Questions.length}}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr />
+
+                                    <div class="container-fluid">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <table class="table">
+                                                    <tbody>
+                                                        <tr v-for="(gradingResult, index) in gradingResults">
+                                                            <td style="font-weight: 600; color:black">Question {{index + 1}}</td>
+                                                            <td>
+                                                                {{gradingResult.question.questionText}}
+                                                            </td>
+                                                            <td>{{gradingResult.question.questionType}}</td>
+                                                            <td><span v-if="!gradingResult.gradingResult.isCorrect"
+                                                                    class="badge badge-danger">Wrong</span>
+                                                                <span v-if="gradingResult.gradingResult.isCorrect"
+                                                                    class="badge badge-success">Correct</span></td>
+                                                            <td>{{gradingResult.gradingResult.points}} of
+                                                                {{gradingResult.questionPoints}} points</td>
+                                                        </tr>
+
+                                                        <tr>
+                                                            <td style="font-weight: 600; color:black" colspan="4">Final grade</td>
+                                                            <td>
+                                                                {{overallResult.gottenPoints}} /
+                                                                {{overallResult.totalPoints}}
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.container-fluid -->
+
+            </div>
+            <!-- End of Main Content -->
+
+            <%- include('../partials/footer'); %>
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+
+        <script>
+            var candidate = JSON.parse('<%- JSON.stringify(candidate) %>');
+            var quiz = JSON.parse('<%- JSON.stringify(quiz) %>');
+            var submission = JSON.parse('<%- JSON.stringify(candidateSubmission) %>');
+            var gradingResults = JSON.parse('<%- JSON.stringify(gradingResults) %>');
+            var overallResult = JSON.parse('<%- JSON.stringify(overallResult) %>');
+
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    candidate,
+                    submission,
+                    quiz,
+                    gradingResults,
+                    overallResult
+                },
+                filters: {
+                    moment: function (date) {
+                        if (!date || date == null) {
+                            return '-';
+                        }
+
+                        return moment(date).format('MMMM Do YYYY, h:mm:ss a');
+                    }
+                },
+                methods: {
+                    copyTakeQuizUrl(submission) {
+
+                    },
+                }
+            })
+
+        </script>
+
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <%- include('../partials/pageend'); %>
+
+</body>
+
+</html>

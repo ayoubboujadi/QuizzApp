@@ -44,13 +44,46 @@
                                     <h6 class="m-0 font-weight-bold text-primary">Quizzes:</h6>
                                 </div>
                                 <div class="card-body">
-                                    <% for(var i=0; i < quizzes.length; i++){ %>
-                                    <% var quiz = quizzes[i]; %>
-                                    <div>
-                                        <span><%- quiz.name %></span>
-                                        <a href="/quiz/edit/<%= quiz.id %>" class="ml-4">Edit quiz</a>
-                                    </div>
-                                    <% } %>
+
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Quiz Name</th>
+                                                <th>Time Limit (minutes)</th>
+                                                <th>Created Date</th>
+                                                <th>Updated Date</th>
+                                                <th>Assigned Candidates</th>
+                                                <th>Candidates Started</th>
+                                                <th>Candidates Finished</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% for(var i=0; i < quizzes.length; i++){ %>
+                                            <% var quiz = quizzes[i]; %>
+                                            <tr>
+                                                <td>
+                                                    <a href="/quiz/edit/<%= quiz.id %>"
+                                                        class="ml-4"><%- quiz.name %></a>
+                                                </td>
+                                                <td><%- quiz.timeLimitMinutes  %></td>
+                                                <td><%- moment(quiz.createdAt).format('MMMM Do YYYY, h:mm:ss a') %></td>
+                                                <td><%- moment(quiz.updatedAt).format('MMMM Do YYYY, h:mm:ss a') %></td>
+                                                <td><%- quiz.assignedCount %></td>
+                                                <td><%- quiz.startedCount %></td>
+                                                <td><%- quiz.finishedCount %></td>
+                                                <td><a href="/quiz/edit/<%= quiz.id %>" class="btn btn-primary btn-icon-split btn-sm">
+                                                    <span class="icon text-white-50">
+                                                        <i class="fas fa-edit"></i>
+                                                    </span>
+                                                    <span class="text">Edit quiz</span>
+                                                </a></td>
+                                            </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+
+
                                 </div>
                             </div>
                         </div>

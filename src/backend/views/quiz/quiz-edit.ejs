@@ -71,8 +71,12 @@
                                             </div>
                                         </div>
                                         <div class="form-group row">
+                                            <label for="timeLimitMinutes" class="col-sm-2 col-form-label">Quiz Time
+                                                Limit (minutes)</label>
                                             <div class="col-sm-10">
-                                                <button type="submit" class="btn btn-primary">Save</button>
+                                                <input type="number" class="form-control" name="timeLimitMinutes"
+                                                    id="timeLimitMinutes" placeholder="Time Limit"
+                                                    v-model="quizData.timeLimitMinutes">
                                             </div>
                                         </div>
                                     </form>
@@ -96,8 +100,9 @@
                                 <div class="card-body">
                                     <select v-model="selectedQuestionType" class="custom-select mr-3"
                                         style="max-width: 300px;">
-                                        <answer value="single-choice" selected>Singe-choice answer question</answer>
-                                        <answer value="multi-choice">Multi-choice answer(s) question</answer>
+                                        <option value="single-choice" selected>Single-choice answer question</option>
+                                        <option value="multi-choice">Multi-choice answer(s) question</option>
+                                        <option value="single-choice-truefalse">True/False question</option>
                                     </select>
                                     <button class="btn btn-info" id="btnAddQuestion" v-on:click="addQuestion()">Add
                                         question</button>
@@ -130,7 +135,7 @@
 
             <div v-if="!question.isEditing" class="form-group answers">
                 <div class="form-check" style="margin: 6px 30px;" v-for="answer in question.answers">
-                    <input class="form-check-input" type="radio" disabled name="answer" :id="'question_' + question.id + '_answer_' + answer.valueId"
+                    <input class="form-check-input" type="radio" disabled :name="'answer1_' + question.id" :id="'question_' + question.id + '_answer_' + answer.valueId"
                             :value="answer.valueId" v-model="question.correctAnswer">
                     <label class="form-check-label" :for="'question_' + question.id + '_answer_' + answer.valueId">
                         {{ answer.value }}
@@ -162,7 +167,7 @@
                             <input type="text" name="test" v-model="answer.value" class="form-control form-control-sm" style="max-width: 450px;">
                         </td>
                         <td>
-                            <input type="radio" name="answer" :id="'question_' + question.id + '_answer_' + answer.valueId"
+                            <input type="radio" :name="'answer2_' + question.id" :id="'question_' + question.id + '_answer_' + answer.valueId"
                                 :value="answer.valueId" v-model="question.correctAnswer" @change="correctAnswerChange(answer)">
                         </td>
                         <td>
@@ -179,6 +184,7 @@
         </div>
     </script>
 
+
     <script id="question-multichoice-template" type="text/x-template">
         <div>
             <div class="form-group mb-4 question-text">
@@ -191,15 +197,22 @@
             <div class="form-group answers">
                 <label v-if="question.isEditing" for="exampleInputEmail1">Question answers:</label>
                 <div class="form-check d-flex" style="margin: 6px 30px;" v-for="answer in question.answers">
-                    <input class="form-check-input" type="checkbox" name="answer" :id="'question_' + question.id + '_answer_' + answer.valueId"
-                         :value="answer.valueId" checked>
+                    <input v-if="question.isEditing" class="form-check-input" type="checkbox" name="answer" :id="'question_' + question.id + '_answer_' + answer.valueId"
+                         :value="answer.valueId" v-model="answer.isCorrect">
+
+                    <input v-if="!question.isEditing" disabled class="form-check-input" type="checkbox" name="answer" :id="'question_' + question.id + '_answer_' + answer.valueId"
+                    :value="answer.valueId" v-model="answer.isCorrect">
                     
                     <label v-if="!question.isEditing" class="form-check-label" :for="'question_' + question.id + '_answer_' + answer.valueId">
                         {{ answer.value }}
                     </label>
 
+                    <span v-if="answer.isCorrect && !question.isEditing" class="badge badge-success ml-2">Correct answer</span>
+
                     <input v-if="question.isEditing" type="text" name="test" v-model="answer.value" 
                         class="form-control form-control-sm" style="max-width: 450px;">
+
+                    <a v-if="question.isEditing" @click="deleteAnswer(answer)" role="button" class="ml-2" style="color: #e74a3b;text-decoration: none;">Delete</a>
                 </div>
             </div>
 
@@ -210,13 +223,13 @@
     <script id="question-wrapper-template" type="text/x-template">
         <div class="card mb-3">
             <div class="card-header py-3 d-flex justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">{{questionNumber}} / {{questionsCount}} | {{questionsTypes[question.type]}}</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">{{questionNumber}} / {{questionsCount}} | {{questionsTypes[question.questionType]}}</h6>
                     <div class="d-flex flex-nowrap">
                         <div class="custom-control custom-switch" v-if="question.isEditing">
                             <input v-model="question.useQuestionPoints" type="checkbox" class="custom-control-input" id="'question' + questionNumber + 'PointsSwitch'">
                             <label class="custom-control-label" for="'question' + questionNumber + 'PointsSwitch'">Question Points</label>
                         </div>
-                      
+
                         <input :disabled="!question.useQuestionPoints" v-if="question.isEditing" v-model="question.points" type="number" class="form-control form-control-sm ml-3" style="max-width: 150px;">
                         <div v-if="!question.isEditing && question.useQuestionPoints" style="font-size: 18px;">{{question.points}} points</div>
 
@@ -232,9 +245,15 @@
                     </div>
             </div>
             <div class="card-body">
-                <singlechoice-component v-if="question.type == 'single-choice'" :key="question.id" :question="question">
+                <div class="text-danger">
+                    <ul>
+                        <li v-for="message in question.validation" :key="message">{{message}}</li>
+                    </ul>
+                </div>
+
+                <singlechoice-component v-if="question.questionType == 'single-choice'" :key="question.id" :question="question">
                 </singlechoice-component>
-                <multichoice-component v-if="question.type == 'multi-choice'" :key="question.id" :question="question">
+                <multichoice-component v-if="question.questionType == 'multi-choice'" :key="question.id" :question="question">
                 </multichoice-component>
             </div>
         </div>
@@ -250,13 +269,14 @@
         quizData.questions.forEach(question => {
             question.isEditing = false;
             question.isNew = false;
+            question.validation = [];
         });
 
         var comp = Vue.component('singlechoice-component', {
             props: ['question'],
             template: '#question-singlechoice-template',
             methods: {
-            addAnswer: function (question) {
+                addAnswer: function (question) {
                     question.answers.push(
                         {
                             'order': question.answers.length + 1,
@@ -286,12 +306,16 @@
                 addAnswer: function (question) {
                     question.answers.push(
                         {
+                            'isCorrect': false,
                             'order': question.answers.length + 1,
                             'valueId': question.answers.length + 1,
                             'value': 'Answer ' + (question.answers.length + 1)
                         }
                     );
-                }
+                },
+                deleteAnswer(answer) {
+                    this.question.answers.splice(this.question.answers.indexOf(answer), 1);
+                },
             }
         });
 
@@ -318,22 +342,49 @@
                 selectedQuestionType: 'single-choice',
                 questionsTypes: {
                     "single-choice": 'Single Choice Question',
-                    "multi-choice": 'Multi Choice Question'
+                    "multi-choice": 'Multi Choice Question',
+                    "single-choice-truefalse": 'True/False Question',
                 },
                 isSaving: false
             },
             methods: {
                 addQuestion: function () {
-                    this.questions.push({
-                        'id': generateGuid(),
-                        'isNew': true,
-                        'isEditing': false,
-                        'type': this.selectedQuestionType,
-                        'text': 'Question ' + (this.questions.length + 1),
-                        'correctAnswer': '',
-                        'answers': []
+                    if (this.selectedQuestionType == "single-choice-truefalse") {
+                        this.questions.push({
+                            'id': generateGuid(),
+                            'isNew': true,
+                            'isEditing': false,
+                            'questionType': 'single-choice',
+                            'text': 'Question ' + (this.questions.length + 1),
+                            'correctAnswer': '1',
+                            'validation': [],
+                            'answers': [
+                                {
+                                    'isCorrect': true,
+                                    'order': 1,
+                                    'value': 'True',
+                                    'valueId': 1
+                                },
+                                {
+                                    'isCorrect': false,
+                                    'order': 2,
+                                    'value': 'False',
+                                    'valueId': 2
+                                }
+                            ]
+                        });
+                    } else {
+                        this.questions.push({
+                            'id': generateGuid(),
+                            'isNew': true,
+                            'isEditing': false,
+                            'questionType': this.selectedQuestionType,
+                            'text': 'Question ' + (this.questions.length + 1),
+                            'correctAnswer': '',
+                            'validation': [],
+                            'answers': []
+                        });
                     }
-                    );
                 },
                 removeQuestion(question) {
                     this.questions.splice(this.questions.indexOf(question), 1);
@@ -342,16 +393,37 @@
                     var requestData = {
                         quiz: this.quizData
                     };
-                    console.log('requestData:', requestData);
                     this.isSaving = true;
-                    console.log("finally 0" + this.isSaving);
-
                     axios.post('/quiz/update', requestData)
-                        .then(function (response) {
-                            Snackbar.show({
-                                text: 'Quiz saved successfully!',
-                                pos: 'top-right',
+                        .then(response => {
+                            var data = response.data;
+
+                            this.questions.forEach(q => {
+                                q.validation = [];
                             });
+
+                            if (data.success) {
+                                Snackbar.show({
+                                    text: 'Quiz saved successfully!',
+                                    pos: 'top-right',
+                                });
+                            } else {
+                                Snackbar.show({
+                                    text: 'Please fix the errors shown for each question and save again!',
+                                    pos: 'top-right',
+                                });
+
+                                for (let index = 0; index < data.messages.length; index++) {
+                                    const validation = data.messages[index];
+                                    var questionIndex = this.questions.findIndex(q => q.id == validation.id);
+                                    console.log({ questionIndex, 'question': this.questions });
+                                    if (questionIndex >= 0) {
+                                        //validation.messages.forEach(x => this.questions[questionIndex].validation.push(x));
+                                        Vue.set(this.questions[questionIndex], 'validation', validation.messages);
+                                    }
+                                }
+                            }
+
                         })
                         .catch(function (error) {
                             console.log(error);
@@ -362,24 +434,6 @@
                 }
             }
         })
-
-        window.onload = function () {
-            $("#formQuiz").on('submit', function (e) {
-                const quizName = document.getElementById("inputName").value;
-                const quizDescription = document.getElementById("inputDescription").value;
-
-                const requestData = { id: window.quizData.id, description: quizData.description, name: quizName };
-
-                $.post("/quiz/update/", requestData, function (data) {
-                    Snackbar.show({
-                        text: 'Quiz updated successfully',
-                        pos: 'top-right',
-                    });
-                });
-                return false;
-            });
-        };
-
 
         function generateGuid() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {

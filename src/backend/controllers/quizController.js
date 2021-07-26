@@ -1,5 +1,6 @@
-const { Question, Quiz } = require('../models');
+const { Question, Quiz, CandidateSubmission } = require('../models');
 var QuestionServiceFactory = require('../services/quizzes/quizService')
+const moment = require('moment');
 
 exports.createQuizPage = async (req, res, next) => {
     console.log('createQuizPage session user', req.session.user);
@@ -31,35 +32,11 @@ exports.editQuiz = async (req, res, next) => {
         return;
     }
 
-
     var quizQuestions = await Question.findAll({ where: { quizId }, raw: true });
     var questions = [];
     quizQuestions.forEach(q => {
-        var questionService = QuestionServiceFactory.make(q.type, q);
-        console.log('questionService: ', questionService);
+        var questionService = QuestionServiceFactory.make(q.questionType, q);
         var question = questionService.getQuestionResponse();
-
-        /*         var question = {
-                    'id': q.id,
-                    'isNew': false,
-                    'isEditing': false,
-                    'type': q.questionType,
-                    'text': q.questionText,
-                    'points': q.points,
-                    'useQuestionPoints': q.useQuestionPoints,
-                    'correctAnswer': null,
-                    'answers': JSON.parse(q.answersData)
-                };
-        
-                if (!question.answers) {
-                    question.answers = [];
-                }
-        
-                var correctAnswer = question.answers.find(x => x.isCorrect);
-                console.log('correctAnswer', correctAnswer);
-                question.correctAnswer = correctAnswer.valueId; */
-        console.log('question', question);
-
         questions.push(question);
     });
 
@@ -70,7 +47,6 @@ exports.editQuiz = async (req, res, next) => {
 exports.updateQuiz = async (req, res, next) => {
     const { quiz } = req.body;
     const currentUserId = req.user.id;
-    console.log('quiz', quiz);
     var dbQuiz = await Quiz.findOne({ where: { id: quiz.id, userId: currentUserId } });
 
     if (!dbQuiz) {
@@ -88,10 +64,26 @@ exports.updateQuiz = async (req, res, next) => {
             questionsToInsert.push(q);
         else
             questionsToUpdate.push(q);
-    }
-    );
+    });
 
-    // find which questions should be deleted
+
+    var validationMessages = [];
+    // Validate both the new and updated questions
+    questionsToInsert.concat(questionsToUpdate).forEach(q => {
+        var questionService = QuestionServiceFactory.make(q.questionType, q);
+        var validationResult = questionService?.validateQuestion();
+        if (validationResult != null)
+            validationMessages.push(validationResult);
+    });
+    if (validationMessages.length > 0) {
+        res.json({
+            success: false,
+            messages: validationMessages
+        });
+        return;
+    }
+
+    // Find which questions should be deleted
     dbQuestions.forEach(dbQ => {
         var relatedQuestion = quiz.questions?.find(x => x.id == dbQ.id);
         if (!relatedQuestion) {
@@ -99,16 +91,12 @@ exports.updateQuiz = async (req, res, next) => {
         }
     });
 
-    console.log('@@@ questionsToInsert: ', questionsToInsert);
-    console.log('@@@ questionsToUpdate: ', questionsToUpdate);
-    console.log('@@@ questionsToDelete: ', questionsToDelete);
-
     // Insert the new questions
     questionsToInsert.forEach(async q => {
         // quizId, questionType, questionText, points, useQuestionPoints, answersData, questionData
-        var answersData = JSON.stringify(q.answers);
+        var answersData = q.answers;
         var temp = {
-            quizId: dbQuiz.id, questionType: q.type, questionText: q.text, points: q.points, useQuestionPoints: q.useQuestionPoints,
+            quizId: dbQuiz.id, questionType: q.questionType, questionText: q.text, points: q.points, useQuestionPoints: q.useQuestionPoints,
             answersData: answersData
         };
         var createdQuestion = await Question.create(temp);
@@ -119,7 +107,7 @@ exports.updateQuiz = async (req, res, next) => {
         // quizId, questionType, questionText, points, useQuestionPoints, answersData, questionData
         var relatedDbQuestion = dbQuestions?.find(x => x.id == q.id);
         if (relatedDbQuestion) {
-            relatedDbQuestion.answersData = JSON.stringify(q.answers);
+            relatedDbQuestion.answersData = q.answers;
             relatedDbQuestion.questionText = q.text;
             relatedDbQuestion.points = q.points;
             relatedDbQuestion.useQuestionPoints = q.useQuestionPoints;
@@ -134,10 +122,14 @@ exports.updateQuiz = async (req, res, next) => {
 
     dbQuiz.name = quiz.name;
     dbQuiz.description = quiz.description;
+    if (quiz.timeLimitMinutes > 0)
+        dbQuiz.timeLimitMinutes = quiz.timeLimitMinutes;
+    else dbQuiz.timeLimitMinutes = null;
 
-    await dbQuiz.save({ fields: ['name', 'description'] });
+    await dbQuiz.save({ fields: ['name', 'description', 'timeLimitMinutes'] });
 
     res.json({
+        success: true,
         name: dbQuiz.name,
         description: dbQuiz.description
     });
@@ -145,6 +137,25 @@ exports.updateQuiz = async (req, res, next) => {
 
 exports.listQuizzes = async (req, res, next) => {
     const currentUserId = req.user.id;
-    var quizzes = await Quiz.findAll({ where: { userId: currentUserId } });
-    res.render('quiz/quiz-list', { quizzes });
+    var quizzes = await Quiz.findAll({ where: { userId: currentUserId }, include: [CandidateSubmission, Question] });
+
+    for (let i = 0; i < quizzes.length; i++) {
+        const quiz = quizzes[i];
+
+        quiz.assignedCount = quiz.CandidateSubmissions.length;
+        quiz.questionsCount = quiz.Questions.length;
+        quiz.finishedCount = 0;
+        quiz.startedCount = 0;
+        for (let j = 0; j < quiz.CandidateSubmissions.length; j++) {
+            const submission = quiz.CandidateSubmissions[j];
+            if (submission.isFinished) {
+                quiz.finishedCount++;
+            }
+            if (submission.isStarted) {
+                quiz.startedCount++;
+            }
+        }
+    }
+
+    res.render('quiz/quiz-list', { quizzes, moment });
 }
